@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Worddo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f5f5ff; color: #1a1a2e; min-height: 100vh; }
+
+  .nav { background: #1a1a2e; color: white; padding: 14px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .nav-title { font-size: 18px; font-weight: 700; cursor: pointer; }
+  .nav-btn { background: transparent; border: 1px solid rgba(255,255,255,0.3); color: white; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; }
+  .nav-btn.active, .nav-btn:hover { background: #4f6ef7; border-color: #4f6ef7; }
+  .nav-trash { margin-left: auto; }
+
+  .screen { display: none; padding: 24px; max-width: 900px; margin: 0 auto; }
+  .screen.active { display: block; }
+
+  /* HOME */
+  .home-hero { text-align: center; padding: 60px 20px 40px; }
+  .home-hero h1 { font-size: 36px; font-weight: 800; margin-bottom: 10px; }
+  .home-hero p { color: #666; font-size: 16px; margin-bottom: 40px; }
+  .home-cards { display: flex; gap: 20px; justify-content: center; flex-wrap: wrap; }
+  .home-card { background: white; border-radius: 16px; padding: 36px 40px; cursor: pointer; width: 220px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); transition: all 0.2s; border: 2px solid transparent; }
+  .home-card:hover { border-color: #4f6ef7; transform: translateY(-4px); }
+  .home-card .icon { font-size: 40px; margin-bottom: 12px; }
+  .home-card h2 { font-size: 20px; font-weight: 700; }
+  .home-card p { font-size: 13px; color: #888; margin-top: 6px; }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; flex-wrap: wrap; }
+  .section-header h2 { font-size: 22px; font-weight: 700; }
+  .back-btn { background: white; border: 1px solid #ddd; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 13px; }
+  .back-btn:hover { background: #f0f4ff; }
+
+  /* FOLDER GRID */
+  .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+  .card-item { background: white; border-radius: 12px; padding: 20px; cursor: pointer; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.06); transition: all 0.2s; border: 2px solid transparent; position: relative; }
+  .card-item:hover { border-color: #4f6ef7; transform: translateY(-2px); }
+  .card-item h3 { font-size: 14px; font-weight: 600; margin-top: 6px; }
+  .card-item p { font-size: 11px; color: #888; margin-top: 3px; }
+  .card-delete-btn { position: absolute; top: 6px; right: 6px; background: transparent; border: none; font-size: 13px; cursor: pointer; opacity: 0; color: #ef4444; padding: 2px 5px; border-radius: 5px; }
+  .card-item:hover .card-delete-btn { opacity: 1; }
+  .card-delete-btn:hover { background: #fef2f2; }
+  .add-card { background: white; border-radius: 12px; padding: 20px; cursor: pointer; text-align: center; border: 2px dashed #ccc; transition: all 0.2s; color: #888; }
+  .add-card:hover { border-color: #4f6ef7; color: #4f6ef7; }
+
+  /* QUIZ */
+  .quiz-step { background: white; border-radius: 16px; padding: 28px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .quiz-step h3 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #444; }
+  .option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .option-btn { background: #f8f9ff; border: 2px solid #e0e4ff; padding: 12px 16px; border-radius: 10px; cursor: pointer; font-size: 14px; text-align: left; transition: all 0.15s; }
+  .option-btn:hover { border-color: #4f6ef7; background: #eef1ff; }
+  .option-btn.selected { border-color: #4f6ef7; background: #4f6ef7; color: white; }
+  .start-quiz-btn { background: #4f6ef7; color: white; border: none; padding: 14px 32px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+  .start-quiz-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* QUIZ GAME */
+  .quiz-progress-bar { background: #e0e4ff; border-radius: 10px; height: 8px; margin-bottom: 20px; }
+  .quiz-progress-fill { background: #4f6ef7; height: 8px; border-radius: 10px; transition: width 0.3s; }
+  .quiz-meta { display: flex; justify-content: space-between; font-size: 13px; color: #888; margin-bottom: 8px; }
+  .quiz-card { background: white; border-radius: 16px; padding: 36px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
+  .prompt-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .prompt { font-size: 26px; font-weight: 700; }
+  .quiz-input { width: 100%; padding: 14px 18px; border: 2px solid #e0e4ff; border-radius: 12px; font-size: 16px; outline: none; margin-bottom: 12px; }
+  .quiz-input:focus { border-color: #4f6ef7; }
+  .quiz-input.correct { border-color: #22c55e; background: #f0fdf4; }
+  .quiz-input.wrong { border-color: #ef4444; background: #fef2f2; }
+  .submit-btn { background: #4f6ef7; color: white; border: none; padding: 12px 28px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; }
+  .next-btn { background: #1a1a2e; color: white; border: none; padding: 12px 28px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; margin-left: 10px; }
+  .feedback { margin-top: 14px; padding: 12px 16px; border-radius: 10px; font-size: 14px; font-weight: 600; }
+  .feedback.correct { background: #f0fdf4; color: #16a34a; }
+  .feedback.wrong { background: #fef2f2; color: #dc2626; }
+  .mc-options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+  .mc-btn { background: #f8f9ff; border: 2px solid #e0e4ff; padding: 14px 16px; border-radius: 12px; cursor: pointer; font-size: 14px; text-align: left; transition: all 0.15s; }
+  .mc-btn:hover:not(:disabled) { border-color: #4f6ef7; background: #eef1ff; }
+  .mc-btn.correct { border-color: #22c55e; background: #f0fdf4; color: #16a34a; font-weight: 700; }
+  .mc-btn.wrong { border-color: #ef4444; background: #fef2f2; color: #dc2626; }
+  .mc-btn:disabled { cursor: not-allowed; }
+
+  /* RESULT */
+  .result-card { background: white; border-radius: 16px; padding: 40px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+  .result-score { font-size: 60px; font-weight: 800; color: #4f6ef7; }
+  .result-label { font-size: 18px; color: #666; margin-bottom: 30px; }
+  .result-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .result-btn { padding: 12px 24px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; }
+  .result-btn.primary { background: #4f6ef7; color: white; }
+  .result-btn.secondary { background: #f0f4ff; color: #4f6ef7; border: 2px solid #4f6ef7; }
+  .result-btn.tertiary { background: #f0f0f0; color: #444; }
+
+  /* STUDY */
+  .study-controls { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+  .search-input { flex: 1; min-width: 160px; padding: 10px 14px; border: 2px solid #e0e4ff; border-radius: 10px; font-size: 14px; outline: none; }
+  .search-input:focus { border-color: #4f6ef7; }
+  .sort-select { padding: 10px 14px; border: 2px solid #e0e4ff; border-radius: 10px; font-size: 14px; outline: none; background: white; cursor: pointer; }
+  .view-toggle { display: flex; border: 2px solid #e0e4ff; border-radius: 10px; overflow: hidden; }
+  .view-btn { padding: 8px 14px; background: white; border: none; cursor: pointer; font-size: 13px; }
+  .view-btn.active { background: #4f6ef7; color: white; }
+  .reset-btn { background: #fef2f2; border: 1px solid #ef4444; color: #dc2626; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600; }
+
+  /* WORD TABLE */
+  .word-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+  .word-table th { background: #1a1a2e; color: white; padding: 12px 16px; text-align: left; font-size: 13px; }
+  .word-table td { padding: 11px 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px; }
+  .word-table tr:last-child td { border-bottom: none; }
+  .word-table tr.excluded td { opacity: 0.35; text-decoration: line-through; }
+  .exclude-btn { background: transparent; border: 1px solid #ddd; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 11px; color: #888; }
+  .exclude-btn.excluded { border-color: #ef4444; color: #ef4444; background: #fef2f2; }
+
+  /* EXAMPLE */
+  .example-card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .example-card .word { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .example-card .meaning { font-size: 13px; color: #888; margin-bottom: 10px; }
+  .example-card .example { font-size: 14px; color: #444; line-height: 1.6; border-left: 3px solid #4f6ef7; padding-left: 12px; font-style: italic; }
+
+  /* ADD FORM */
+  .add-word-form { background: white; border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: none; }
+  .add-word-form.open { display: block; }
+  .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .form-input { flex: 1; min-width: 120px; padding: 10px 14px; border: 2px solid #e0e4ff; border-radius: 10px; font-size: 14px; outline: none; }
+  .form-input:focus { border-color: #4f6ef7; }
+  .form-btn { background: #4f6ef7; color: white; border: none; padding: 10px 18px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; }
+  .form-btn.cancel { background: #f0f0f0; color: #444; }
+
+  /* MODAL */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 28px; width: 360px; max-width: 90vw; }
+  .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .modal input { width: 100%; padding: 12px 14px; border: 2px solid #e0e4ff; border-radius: 10px; font-size: 15px; outline: none; margin-bottom: 16px; }
+  .modal input:focus { border-color: #4f6ef7; }
+  .modal-btns { display: flex; gap: 10px; }
+  .modal-btn { flex: 1; padding: 12px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; }
+  .modal-btn.confirm { background: #4f6ef7; color: white; }
+  .modal-btn.cancel { background: #f0f0f0; color: #444; }
+
+  /* RECOMMENDED SETS */
+  .rec-set { background: white; border-radius: 12px; padding: 20px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; }
+  .rec-set-info h4 { font-size: 16px; font-weight: 700; }
+  .rec-set-info p { font-size: 13px; color: #888; margin-top: 4px; }
+  .rec-use-btn { background: #4f6ef7; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; }
+
+  /* TRASH */
+  .trash-item { background: white; border-radius: 12px; padding: 16px 20px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .trash-item-info { display: flex; align-items: center; gap: 10px; }
+  .trash-item-name { font-size: 15px; font-weight: 600; }
+  .trash-item-meta { font-size: 12px; color: #888; }
+  .trash-actions { display: flex; gap: 8px; }
+  .restore-btn { background: #f0f4ff; border: 1px solid #4f6ef7; color: #4f6ef7; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .perm-delete-btn { background: #fef2f2; border: 1px solid #ef4444; color: #dc2626; padding: 6px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; }
+  .empty-trash-btn { background: #ef4444; color: white; border: none; padding: 10px 20px; border-radius: 10px; cursor: pointer; font-size: 14px; font-weight: 600; }
+
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #dcfce7; color: #16a34a; }
+  .badge-yellow { background: #fef9c3; color: #a16207; }
+  .badge-red { background: #fee2e2; color: #dc2626; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <span class="nav-title" onclick="goHome()">📚 Worddo</span>
+  <button class="nav-btn" id="nav-home" onclick="goHome()">홈</button>
+  <button class="nav-btn" id="nav-quiz" onclick="showScreen('quiz-select')">퀴즈</button>
+  <button class="nav-btn" id="nav-study" onclick="showScreen('study')">학습</button>
+  <button class="nav-btn nav-trash" id="nav-trash" onclick="showScreen('trash')">🗑️ 휴지통</button>
+</div>
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="home-hero">
+    <h1>📚 Worddo</h1>
+    <p>나만의 단어장을 만들고 퀴즈로 실력을 확인해봐!</p>
+    <div class="home-cards">
+      <div class="home-card" onclick="showScreen('quiz-select')">
+        <div class="icon">✏️</div>
+        <h2>퀴즈</h2>
+        <p>단어 퀴즈로 실력 테스트</p>
+      </div>
+      <div class="home-card" onclick="showScreen('study')">
+        <div class="icon">📖</div>
+        <h2>학습</h2>
+        <p>단어장 & 예문 보기</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ SELECT -->
+<div class="screen" id="screen-quiz-select">
+  <div class="section-header">
+    <button class="back-btn" onclick="goHome()">← 홈</button>
+    <h2>퀴즈 설정</h2>
+  </div>
+  <div class="quiz-step">
+    <h3>① 퀴즈 방식</h3>
+    <div class="option-grid">
+      <button class="option-btn" id="mode-en-ko" onclick="selectMode('en-ko')">🇺🇸 영단어 → 뜻 쓰기</button>
+      <button class="option-btn" id="mode-ko-en" onclick="selectMode('ko-en')">🇰🇷 한국어 → 영단어 쓰기</button>
+      <button class="option-btn" id="mode-mc" onclick="selectMode('mc')">📋 객관식 (4지선다)</button>
+    </div>
+  </div>
+  <div class="quiz-step">
+    <h3>② 단어장 선택</h3>
+    <div class="option-grid" id="quiz-unit-options"></div>
+  </div>
+  <button class="start-quiz-btn" id="start-quiz-btn" onclick="startQuiz()" disabled>퀴즈 시작!</button>
+</div>
+
+<!-- QUIZ GAME -->
+<div class="screen" id="screen-quiz-game">
+  <div class="section-header">
+    <button class="back-btn" onclick="showScreen('quiz-select')">← 설정</button>
+    <h2 id="game-title">퀴즈</h2>
+  </div>
+  <div class="quiz-meta">
+    <span id="quiz-counter">1 / 20</span>
+    <span id="quiz-score-display">점수: 0</span>
+  </div>
+  <div class="quiz-progress-bar"><div class="quiz-progress-fill" id="quiz-progress" style="width:0%"></div></div>
+  <div class="quiz-card">
+    <div class="prompt-label" id="prompt-label">영어</div>
+    <div class="prompt" id="quiz-prompt">word</div>
+  </div>
+  <div id="input-area">
+    <input class="quiz-input" id="quiz-input" type="text" placeholder="답을 입력하세요..." onkeydown="if(event.key==='Enter')checkAnswer()">
+    <button class="submit-btn" id="submit-btn" onclick="checkAnswer()">확인</button>
+    <button class="next-btn" id="next-btn" onclick="nextQuestion()" style="display:none">다음 →</button>
+    <div class="feedback" id="feedback" style="display:none"></div>
+  </div>
+  <div id="mc-area" style="display:none">
+    <div class="mc-options" id="mc-options"></div>
+    <button class="next-btn" id="mc-next-btn" onclick="nextQuestion()" style="display:none;margin-top:14px">다음 →</button>
+  </div>
+</div>
+
+<!-- QUIZ RESULT -->
+<div class="screen" id="screen-quiz-result">
+  <div class="result-card">
+    <div class="result-score" id="result-score">0/0</div>
+    <div class="result-label" id="result-label">수고했어!</div>
+    <div class="result-btns">
+      <button class="result-btn primary" onclick="restartQuiz()">🔄 다시하기</button>
+      <button class="result-btn secondary" id="retry-wrong-btn" onclick="retryWrong()">❌ 틀린 문제만</button>
+      <button class="result-btn tertiary" onclick="goHome()">🏠 끝내기</button>
+    </div>
+  </div>
+</div>
+
+<!-- STUDY - FOLDER VIEW -->
+<div class="screen" id="screen-study">
+  <div class="section-header">
+    <button class="back-btn" id="study-back-btn" onclick="goHome()">← 홈</button>
+    <h2 id="study-title">학습</h2>
+  </div>
+  <div id="study-folder-view"></div>
+</div>
+
+<!-- STUDY - WORD VIEW -->
+<div class="screen" id="screen-study-words">
+  <div class="section-header">
+    <button class="back-btn" onclick="studyBackToFolder()">← 뒤로</button>
+    <h2 id="study-words-title">단어장</h2>
+  </div>
+  <div class="study-controls">
+    <input class="search-input" id="search-input" type="text" placeholder="🔍 단어 검색..." oninput="renderStudy()">
+    <select class="sort-select" id="sort-select" onchange="renderStudy()">
+      <option value="default">기본순</option>
+      <option value="abc">ABC순</option>
+      <option value="ko">가나다순</option>
+    </select>
+    <div class="view-toggle">
+      <button class="view-btn active" id="view-words-btn" onclick="setView('words')">단어장</button>
+      <button class="view-btn" id="view-examples-btn" onclick="setView('examples')">예문</button>
+    </div>
+    <button class="reset-btn" onclick="resetExclusions()">↺ 제외 초기화</button>
+  </div>
+  <div class="add-word-form" id="add-word-form">
+    <div class="form-row">
+      <input class="form-input" id="new-word-en" placeholder="영단어">
+      <input class="form-input" id="new-word-ko" placeholder="한국어 뜻">
+      <input class="form-input" id="new-word-ex" placeholder="예문 (선택)">
+      <button class="form-btn" onclick="addCustomWord()">추가</button>
+      <button class="form-btn cancel" onclick="toggleAddForm()">취소</button>
+    </div>
+  </div>
+  <div id="study-content"></div>
+</div>
+
+<!-- TRASH -->
+<div class="screen" id="screen-trash">
+  <div class="section-header">
+    <button class="back-btn" onclick="goHome()">← 홈</button>
+    <h2>🗑️ 휴지통</h2>
+    <button class="empty-trash-btn" onclick="emptyTrash()" style="margin-left:auto">전체 삭제</button>
+  </div>
+  <div id="trash-content"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">이름 입력</h3>
+    <input id="modal-input" type="text" placeholder="이름...">
+    <div id="modal-rec-sets" style="display:none;margin-bottom:16px"></div>
+    <div class="modal-btns">
+      <button class="modal-btn cancel" onclick="closeModal()">취소</button>
+      <button class="modal-btn confirm" id="modal-confirm-btn" onclick="confirmModal()">확인</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========================
+// RECOMMENDED SETS DATA
+// ========================
+const RECOMMENDED_SETS = {
+  beginner1: { name:'초급 1', level:'초급', badge:'badge-green', folder:'초급', words:[
+    {en:'apple',ko:'사과',ex:'I eat an apple every day.'},
+    {en:'banana',ko:'바나나',ex:'The banana is yellow.'},
+    {en:'orange',ko:'오렌지',ex:'She drinks orange juice.'},
+    {en:'strawberry',ko:'딸기',ex:'Strawberries are red and sweet.'},
+    {en:'grape',ko:'포도',ex:'I like grapes.'},
+    {en:'watermelon',ko:'수박',ex:'We eat watermelon in summer.'},
+    {en:'dog',ko:'개, 강아지',ex:'The dog is barking.'},
+    {en:'cat',ko:'고양이',ex:'My cat sleeps all day.'},
+    {en:'bird',ko:'새',ex:'The bird is singing.'},
+    {en:'fish',ko:'물고기, 생선',ex:'The fish swims in the water.'},
+    {en:'rabbit',ko:'토끼',ex:'The rabbit is white and fluffy.'},
+    {en:'horse',ko:'말',ex:'She rides a horse.'},
+    {en:'red',ko:'빨간, 빨간색',ex:'The apple is red.'},
+    {en:'blue',ko:'파란, 파란색',ex:'The sky is blue.'},
+    {en:'green',ko:'초록, 초록색',ex:'The grass is green.'},
+    {en:'yellow',ko:'노란, 노란색',ex:'The sun is yellow.'},
+    {en:'white',ko:'흰, 흰색',ex:'The snow is white.'},
+    {en:'black',ko:'검은, 검은색',ex:'The night is black.'},
+    {en:'big',ko:'큰',ex:'The elephant is big.'},
+    {en:'small',ko:'작은',ex:'The mouse is small.'},
+    {en:'happy',ko:'행복한, 기쁜',ex:'She is happy today.'},
+    {en:'sad',ko:'슬픈',ex:'He looks sad.'},
+    {en:'hot',ko:'뜨거운, 더운',ex:'The soup is hot.'},
+    {en:'cold',ko:'차가운, 추운',ex:'The water is cold.'},
+    {en:'go',ko:'가다',ex:'I go to school every day.'},
+    {en:'come',ko:'오다',ex:'Please come here.'},
+    {en:'eat',ko:'먹다',ex:'I eat lunch at noon.'},
+    {en:'drink',ko:'마시다',ex:'She drinks water.'},
+    {en:'sleep',ko:'자다',ex:'I sleep eight hours a day.'},
+    {en:'run',ko:'달리다',ex:'He runs every morning.'},
+    {en:'walk',ko:'걷다',ex:'We walk to the park.'},
+    {en:'sit',ko:'앉다',ex:'Please sit down.'},
+    {en:'stand',ko:'서다',ex:'Stand up, please.'},
+    {en:'open',ko:'열다',ex:'Open the door, please.'},
+    {en:'close',ko:'닫다',ex:'Close the window.'},
+    {en:'mother',ko:'어머니, 엄마',ex:'My mother cooks dinner.'},
+    {en:'father',ko:'아버지, 아빠',ex:'My father goes to work.'},
+    {en:'brother',ko:'형, 오빠, 남동생',ex:'My brother plays soccer.'},
+    {en:'sister',ko:'언니, 누나, 여동생',ex:'My sister loves music.'},
+    {en:'friend',ko:'친구',ex:'She is my best friend.'},
+    {en:'school',ko:'학교',ex:'I go to school by bus.'},
+    {en:'house',ko:'집',ex:'We live in a big house.'},
+    {en:'book',ko:'책',ex:'I read a book before bed.'},
+    {en:'water',ko:'물',ex:'Drink more water.'},
+    {en:'food',ko:'음식',ex:'The food smells good.'},
+    {en:'sun',ko:'태양, 해',ex:'The sun rises in the east.'},
+    {en:'moon',ko:'달',ex:'The moon shines at night.'},
+    {en:'tree',ko:'나무',ex:'The tree is very tall.'},
+    {en:'flower',ko:'꽃',ex:'She waters the flowers.'},
+    {en:'day',ko:'날, 하루',ex:'Today is a nice day.'},
+  ]},
+  beginner2: { name:'초급 2', level:'초급', badge:'badge-green', folder:'초급', words:[
+    {en:'morning',ko:'아침',ex:'I wake up every morning.'},
+    {en:'night',ko:'밤',ex:'The stars shine at night.'},
+    {en:'time',ko:'시간, 때',ex:'What time is it?'},
+    {en:'year',ko:'해, 년',ex:'A new year begins in January.'},
+    {en:'month',ko:'달, 월',ex:'There are twelve months in a year.'},
+    {en:'week',ko:'주, 주일',ex:'I exercise three times a week.'},
+    {en:'weather',ko:'날씨',ex:'The weather is nice today.'},
+    {en:'rain',ko:'비, 비가 오다',ex:'It rains a lot in summer.'},
+    {en:'snow',ko:'눈, 눈이 오다',ex:'Children love snow.'},
+    {en:'wind',ko:'바람',ex:'The wind is strong today.'},
+    {en:'cloud',ko:'구름',ex:'The sky is full of clouds.'},
+    {en:'warm',ko:'따뜻한',ex:'Spring is warm and pleasant.'},
+    {en:'cool',ko:'시원한',ex:'The breeze is cool.'},
+    {en:'bread',ko:'빵',ex:'I eat bread for breakfast.'},
+    {en:'rice',ko:'쌀, 밥',ex:'We eat rice every day.'},
+    {en:'milk',ko:'우유',ex:'Children drink milk.'},
+    {en:'egg',ko:'달걀',ex:'I have eggs for breakfast.'},
+    {en:'meat',ko:'고기',ex:'He likes meat.'},
+    {en:'vegetable',ko:'채소',ex:'Eat more vegetables.'},
+    {en:'sweet',ko:'달콤한, 단',ex:'The cake is sweet.'},
+    {en:'sour',ko:'신',ex:'Lemons are sour.'},
+    {en:'teacher',ko:'선생님',ex:'My teacher is very kind.'},
+    {en:'student',ko:'학생',ex:'She is a good student.'},
+    {en:'doctor',ko:'의사',ex:'He wants to be a doctor.'},
+    {en:'hospital',ko:'병원',ex:'She works at a hospital.'},
+    {en:'market',ko:'시장',ex:'We shop at the market.'},
+    {en:'park',ko:'공원',ex:'Children play in the park.'},
+    {en:'road',ko:'도로, 길',ex:'Be careful on the road.'},
+    {en:'car',ko:'자동차',ex:'My father drives a car.'},
+    {en:'bus',ko:'버스',ex:'I take the bus to school.'},
+    {en:'train',ko:'기차',ex:'The train is fast.'},
+    {en:'plane',ko:'비행기',ex:'We fly by plane.'},
+    {en:'money',ko:'돈',ex:'She saves her money.'},
+    {en:'bag',ko:'가방',ex:'My bag is heavy.'},
+    {en:'clothes',ko:'옷',ex:'She buys new clothes.'},
+    {en:'shoes',ko:'신발',ex:'I need new shoes.'},
+    {en:'hand',ko:'손',ex:'Wash your hands.'},
+    {en:'eye',ko:'눈',ex:'She has brown eyes.'},
+    {en:'nose',ko:'코',ex:'He has a big nose.'},
+    {en:'mouth',ko:'입',ex:'Open your mouth.'},
+    {en:'ear',ko:'귀',ex:'She covers her ears.'},
+    {en:'head',ko:'머리',ex:'He nods his head.'},
+    {en:'arm',ko:'팔',ex:'She broke her arm.'},
+    {en:'leg',ko:'다리',ex:'He hurt his leg.'},
+    {en:'heart',ko:'심장, 마음',ex:'Her heart is kind.'},
+    {en:'tall',ko:'키가 큰',ex:'He is very tall.'},
+    {en:'short',ko:'키가 작은, 짧은',ex:'She has short hair.'},
+    {en:'fast',ko:'빠른',ex:'The cheetah is very fast.'},
+    {en:'slow',ko:'느린',ex:'The turtle is slow.'},
+    {en:'new',ko:'새로운',ex:'I got a new phone.'},
+  ]},
+  beginner3: { name:'초급 3', level:'초급', badge:'badge-green', folder:'초급', words:[
+    {en:'old',ko:'오래된, 나이 든',ex:'This building is very old.'},
+    {en:'good',ko:'좋은',ex:'She is a good person.'},
+    {en:'bad',ko:'나쁜',ex:'That was a bad idea.'},
+    {en:'clean',ko:'깨끗한',ex:'Keep your room clean.'},
+    {en:'dirty',ko:'더러운',ex:'His hands are dirty.'},
+    {en:'full',ko:'가득 찬, 배부른',ex:'The bottle is full.'},
+    {en:'empty',ko:'비어 있는',ex:'The glass is empty.'},
+    {en:'loud',ko:'시끄러운',ex:'The music is too loud.'},
+    {en:'quiet',ko:'조용한',ex:'Please be quiet.'},
+    {en:'love',ko:'사랑하다, 사랑',ex:'I love my family.'},
+    {en:'like',ko:'좋아하다',ex:'She likes reading books.'},
+    {en:'want',ko:'원하다',ex:'I want a new bike.'},
+    {en:'need',ko:'필요하다',ex:'I need help.'},
+    {en:'have',ko:'가지다',ex:'I have a dog.'},
+    {en:'make',ko:'만들다',ex:'She makes cookies.'},
+    {en:'give',ko:'주다',ex:'He gives her flowers.'},
+    {en:'take',ko:'가져가다, 잡다',ex:'Take an umbrella.'},
+    {en:'buy',ko:'사다',ex:'She buys groceries.'},
+    {en:'sell',ko:'팔다',ex:'He sells vegetables.'},
+    {en:'play',ko:'놀다, 연주하다',ex:'Children play outside.'},
+    {en:'study',ko:'공부하다',ex:'She studies every day.'},
+    {en:'work',ko:'일하다',ex:'He works hard.'},
+    {en:'help',ko:'돕다, 도움',ex:'Can you help me?'},
+    {en:'thank',ko:'감사하다',ex:'Thank you for your help.'},
+    {en:'sorry',ko:'미안한',ex:'I am sorry for being late.'},
+    {en:'please',ko:'제발, 부탁합니다',ex:'Please help me.'},
+    {en:'hello',ko:'안녕하세요',ex:'Hello, nice to meet you.'},
+    {en:'goodbye',ko:'안녕히 가세요',ex:'Goodbye, see you tomorrow.'},
+    {en:'yes',ko:'네, 예',ex:'Yes, I understand.'},
+    {en:'no',ko:'아니요',ex:'No, thank you.'},
+    {en:'here',ko:'여기',ex:'Come here, please.'},
+    {en:'there',ko:'거기, 저기',ex:'Put it there.'},
+    {en:'up',ko:'위로',ex:'Look up at the sky.'},
+    {en:'down',ko:'아래로',ex:'Sit down, please.'},
+    {en:'left',ko:'왼쪽',ex:'Turn left at the corner.'},
+    {en:'right',ko:'오른쪽, 맞는',ex:'Turn right here.'},
+    {en:'inside',ko:'안에',ex:'Come inside.'},
+    {en:'outside',ko:'밖에',ex:'Play outside.'},
+    {en:'beautiful',ko:'아름다운',ex:'What a beautiful flower!'},
+    {en:'strong',ko:'강한',ex:'He is very strong.'},
+    {en:'weak',ko:'약한',ex:'She felt weak after being sick.'},
+    {en:'early',ko:'이른, 일찍',ex:'Wake up early.'},
+    {en:'late',ko:'늦은, 늦게',ex:"Don't be late for school."},
+    {en:'always',ko:'항상',ex:'She always smiles.'},
+    {en:'never',ko:'절대 ~않다',ex:'I never give up.'},
+    {en:'every',ko:'모든, 매',ex:'I walk every day.'},
+    {en:'maybe',ko:'아마도',ex:'Maybe it will rain tomorrow.'},
+    {en:'very',ko:'매우, 아주',ex:'She is very kind.'},
+    {en:'really',ko:'정말',ex:'I really like this song.'},
+    {en:'enough',ko:'충분한',ex:'I have enough time.'},
+  ]},
+  intermediate1: { name:'중급 1', level:'중급', badge:'badge-yellow', folder:'중급', words:[
+    {en:'achieve',ko:'달성하다, 성취하다',ex:'She achieved her goal.'},
+    {en:'adapt',ko:'적응하다',ex:'Animals adapt to their environment.'},
+    {en:'afford',ko:'감당하다, 여유가 있다',ex:'I cannot afford a new car.'},
+    {en:'agree',ko:'동의하다',ex:'I agree with your opinion.'},
+    {en:'allow',ko:'허락하다, 허용하다',ex:'Parents allow children to play outside.'},
+    {en:'anxious',ko:'불안한, 걱정하는',ex:'She felt anxious before the exam.'},
+    {en:'avoid',ko:'피하다',ex:'Avoid eating too much sugar.'},
+    {en:'benefit',ko:'이득, 혜택, 이롭다',ex:'Exercise has many benefits.'},
+    {en:'career',ko:'직업, 경력',ex:'She chose a career in medicine.'},
+    {en:'cause',ko:'원인, 야기하다',ex:'Stress can cause health problems.'},
+    {en:'challenge',ko:'도전, 어려움',ex:'Learning a new language is a challenge.'},
+    {en:'chance',ko:'기회, 가능성',ex:'This is your chance to shine.'},
+    {en:'choose',ko:'선택하다',ex:'Choose the right path.'},
+    {en:'compare',ko:'비교하다',ex:'Compare the two options.'},
+    {en:'consider',ko:'고려하다',ex:'Consider all possibilities.'},
+    {en:'continue',ko:'계속하다',ex:'Continue working hard.'},
+    {en:'control',ko:'통제하다, 조절하다',ex:'Control your emotions.'},
+    {en:'create',ko:'창조하다, 만들다',ex:'She creates beautiful art.'},
+    {en:'curious',ko:'궁금한, 호기심 있는',ex:'Children are naturally curious.'},
+    {en:'decide',ko:'결정하다',ex:'I decided to study abroad.'},
+    {en:'develop',ko:'개발하다, 발달하다',ex:'She developed her skills over time.'},
+    {en:'discover',ko:'발견하다',ex:'Scientists discover new things every day.'},
+    {en:'effect',ko:'효과, 영향',ex:'Exercise has a positive effect on health.'},
+    {en:'effort',ko:'노력',ex:'Success requires a lot of effort.'},
+    {en:'emotion',ko:'감정',ex:'She expresses her emotions freely.'},
+    {en:'encourage',ko:'격려하다',ex:'Teachers encourage students to try.'},
+    {en:'energy',ko:'에너지, 활력',ex:'She has a lot of energy.'},
+    {en:'enjoy',ko:'즐기다',ex:'I enjoy reading books.'},
+    {en:'experience',ko:'경험, 경험하다',ex:'Experience is the best teacher.'},
+    {en:'explain',ko:'설명하다',ex:'Please explain the problem.'},
+    {en:'fail',ko:'실패하다',ex:"Don't be afraid to fail."},
+    {en:'familiar',ko:'익숙한',ex:'This place looks familiar.'},
+    {en:'focus',ko:'집중하다',ex:'Focus on your goals.'},
+    {en:'forget',ko:'잊다',ex:"Don't forget your homework."},
+    {en:'freedom',ko:'자유',ex:'Freedom is very important.'},
+    {en:'goal',ko:'목표',ex:'Set a clear goal.'},
+    {en:'grow',ko:'성장하다, 자라다',ex:'Plants grow in sunlight.'},
+    {en:'honest',ko:'정직한',ex:'Always be honest.'},
+    {en:'hope',ko:'희망, 바라다',ex:'I hope for a better future.'},
+    {en:'imagine',ko:'상상하다',ex:'Imagine a world without war.'},
+    {en:'improve',ko:'향상시키다, 나아지다',ex:'Practice will improve your skills.'},
+    {en:'increase',ko:'증가하다, 늘리다',ex:'Exercise can increase energy.'},
+    {en:'influence',ko:'영향, 영향을 주다',ex:'Parents influence their children.'},
+    {en:'interested',ko:'관심 있는',ex:'She is interested in science.'},
+    {en:'issue',ko:'문제, 사안',ex:'This is an important issue.'},
+    {en:'knowledge',ko:'지식',ex:'Knowledge is power.'},
+    {en:'learn',ko:'배우다',ex:'Never stop learning.'},
+    {en:'manage',ko:'관리하다, 해내다',ex:'She manages her time well.'},
+    {en:'matter',ko:'중요하다, 문제',ex:'Every detail matters.'},
+    {en:'memory',ko:'기억, 기억력',ex:'She has a great memory.'},
+  ]},
+  intermediate2: { name:'중급 2', level:'중급', badge:'badge-yellow', folder:'중급', words:[
+    {en:'method',ko:'방법',ex:'Find the best method.'},
+    {en:'nervous',ko:'긴장한',ex:'He felt nervous before the speech.'},
+    {en:'notice',ko:'알아채다, 통지',ex:'Did you notice anything strange?'},
+    {en:'nutrition',ko:'영양',ex:'Good nutrition is essential.'},
+    {en:'opinion',ko:'의견',ex:'Share your opinion.'},
+    {en:'opportunity',ko:'기회',ex:'Grab every opportunity.'},
+    {en:'organize',ko:'정리하다, 조직하다',ex:'Organize your thoughts first.'},
+    {en:'patient',ko:'인내심 있는, 환자',ex:'Be patient and wait.'},
+    {en:'practice',ko:'연습하다, 연습',ex:'Practice makes perfect.'},
+    {en:'prepare',ko:'준비하다',ex:'Prepare for the exam.'},
+    {en:'prevent',ko:'막다, 예방하다',ex:'Wash hands to prevent illness.'},
+    {en:'protect',ko:'보호하다',ex:'Protect the environment.'},
+    {en:'provide',ko:'제공하다',ex:'The school provides meals.'},
+    {en:'purpose',ko:'목적',ex:'What is your purpose?'},
+    {en:'realize',ko:'깨닫다',ex:'I realized my mistake.'},
+    {en:'reason',ko:'이유, 이성',ex:'Give me a reason.'},
+    {en:'reduce',ko:'줄이다',ex:'Reduce waste to help the environment.'},
+    {en:'relationship',ko:'관계',ex:'A good relationship requires trust.'},
+    {en:'remember',ko:'기억하다',ex:'Remember to call me.'},
+    {en:'replace',ko:'대체하다',ex:'Replace bad habits with good ones.'},
+    {en:'respect',ko:'존중하다, 존중',ex:"Respect others' opinions."},
+    {en:'respond',ko:'응답하다',ex:'Please respond to my email.'},
+    {en:'result',ko:'결과',ex:'Hard work leads to great results.'},
+    {en:'role',ko:'역할',ex:'What is your role in the team?'},
+    {en:'serious',ko:'심각한, 진지한',ex:'This is a serious matter.'},
+    {en:'share',ko:'나누다, 공유하다',ex:'Share your food with others.'},
+    {en:'situation',ko:'상황',ex:'Assess the situation first.'},
+    {en:'skill',ko:'기술, 능력',ex:'Develop your skills every day.'},
+    {en:'society',ko:'사회',ex:'We live in a diverse society.'},
+    {en:'solve',ko:'해결하다',ex:"Let's solve this together."},
+    {en:'stress',ko:'스트레스, 강조하다',ex:'Exercise helps reduce stress.'},
+    {en:'success',ko:'성공',ex:'Success comes from hard work.'},
+    {en:'suggest',ko:'제안하다',ex:'I suggest going earlier.'},
+    {en:'support',ko:'지지하다, 지원',ex:'Support your friends.'},
+    {en:'technology',ko:'기술',ex:'Technology changes our lives.'},
+    {en:'trust',ko:'신뢰하다, 신뢰',ex:'Trust is hard to build.'},
+    {en:'understand',ko:'이해하다',ex:'Do you understand the question?'},
+    {en:'value',ko:'가치, 소중히 여기다',ex:'Value your time.'},
+    {en:'balance',ko:'균형',ex:'Find a balance between work and rest.'},
+    {en:'brave',ko:'용감한',ex:'Be brave and speak up.'},
+    {en:'calm',ko:'침착한, 진정하다',ex:'Stay calm in difficult situations.'},
+    {en:'confident',ko:'자신감 있는',ex:'She is confident in her abilities.'},
+    {en:'creative',ko:'창의적인',ex:'He is a very creative person.'},
+    {en:'culture',ko:'문화',ex:'Every country has its own culture.'},
+    {en:'dedicated',ko:'헌신적인',ex:'She is dedicated to her work.'},
+    {en:'despite',ko:'~에도 불구하고',ex:'She succeeded despite obstacles.'},
+    {en:'diverse',ko:'다양한',ex:'Our team is very diverse.'},
+    {en:'effective',ko:'효과적인',ex:'This is an effective method.'},
+    {en:'ensure',ko:'보장하다',ex:'Ensure your safety first.'},
+    {en:'flexible',ko:'유연한',ex:'Be flexible with your schedule.'},
+  ]},
+  intermediate3: { name:'중급 3', level:'중급', badge:'badge-yellow', folder:'중급', words:[
+    {en:'generous',ko:'관대한',ex:'He is very generous.'},
+    {en:'global',ko:'세계적인',ex:'Climate change is a global issue.'},
+    {en:'grateful',ko:'감사하는',ex:'Be grateful for what you have.'},
+    {en:'growth',ko:'성장',ex:'Personal growth takes time.'},
+    {en:'healthy',ko:'건강한',ex:'Eat healthy food.'},
+    {en:'impact',ko:'영향, 충격',ex:'Your words have a big impact.'},
+    {en:'independent',ko:'독립적인',ex:'She is very independent.'},
+    {en:'inspire',ko:'영감을 주다',ex:'Great leaders inspire others.'},
+    {en:'maintain',ko:'유지하다',ex:'Maintain a healthy lifestyle.'},
+    {en:'meaningful',ko:'의미 있는',ex:'Live a meaningful life.'},
+    {en:'motivate',ko:'동기를 부여하다',ex:'What motivates you?'},
+    {en:'natural',ko:'자연스러운, 자연의',ex:'It is natural to feel nervous.'},
+    {en:'positive',ko:'긍정적인',ex:'Keep a positive attitude.'},
+    {en:'powerful',ko:'강력한',ex:'Words are powerful.'},
+    {en:'pressure',ko:'압박, 압력',ex:"Don't put too much pressure on yourself."},
+    {en:'priority',ko:'우선순위',ex:'Family is my top priority.'},
+    {en:'reflect',ko:'반성하다, 반영하다',ex:'Reflect on your mistakes.'},
+    {en:'reliable',ko:'믿을 수 있는',ex:'She is very reliable.'},
+    {en:'responsible',ko:'책임감 있는',ex:'Be responsible for your actions.'},
+    {en:'sensitive',ko:'민감한',ex:'She is sensitive to criticism.'},
+    {en:'significant',ko:'중요한, 상당한',ex:'This is a significant discovery.'},
+    {en:'struggle',ko:'고군분투하다, 어려움',ex:'Everyone struggles sometimes.'},
+    {en:'volunteer',ko:'자원봉사자, 자원하다',ex:'She volunteers at a shelter.'},
+    {en:'waste',ko:'낭비하다, 쓰레기',ex:"Don't waste your time."},
+    {en:'wonder',ko:'궁금해하다, 경이',ex:'I wonder what will happen.'},
+    {en:'emphasize',ko:'강조하다',ex:'She emphasized the importance of sleep.'},
+    {en:'expand',ko:'확장하다',ex:'The company plans to expand.'},
+    {en:'express',ko:'표현하다',ex:'Express yourself freely.'},
+    {en:'identify',ko:'확인하다, 파악하다',ex:'Identify the main problem.'},
+    {en:'network',ko:'네트워크, 인맥',ex:'Build a strong network.'},
+    {en:'examine',ko:'검토하다, 검사하다',ex:'The doctor will examine you.'},
+    {en:'demand',ko:'요구하다, 수요',ex:'The job demands a lot of time.'},
+    {en:'damage',ko:'피해, 손상시키다',ex:'The storm caused a lot of damage.'},
+    {en:'describe',ko:'묘사하다, 설명하다',ex:'Describe what you see.'},
+    {en:'earn',ko:'벌다, 얻다',ex:'She earns a good salary.'},
+    {en:'various',ko:'다양한',ex:'There are various ways to solve it.'},
+    {en:'view',ko:'관점, 보다',ex:'Share your view on this topic.'},
+    {en:'wonder',ko:'경이, 궁금해하다',ex:'The world is full of wonder.'},
+    {en:'abroad',ko:'해외에, 해외로',ex:'She studied abroad.'},
+    {en:'although',ko:'비록 ~이지만',ex:'Although it was hard, she succeeded.'},
+    {en:'attitude',ko:'태도',ex:'Keep a positive attitude.'},
+    {en:'compete',ko:'경쟁하다',ex:'She competes in marathons.'},
+    {en:'complex',ko:'복잡한',ex:'The problem is very complex.'},
+    {en:'context',ko:'맥락, 상황',ex:'Understand the context first.'},
+    {en:'debate',ko:'토론하다, 토론',ex:'They had a lively debate.'},
+    {en:'decrease',ko:'감소하다, 줄이다',ex:'Sales decreased last month.'},
+    {en:'distribute',ko:'배분하다',ex:'Distribute the resources fairly.'},
+    {en:'evaluate',ko:'평가하다',ex:'Evaluate your progress regularly.'},
+    {en:'evolve',ko:'진화하다, 발전하다',ex:'Languages evolve over time.'},
+    {en:'generate',ko:'발생시키다, 만들다',ex:'Solar panels generate electricity.'},
+  ]},
+  advanced1: { name:'상급 1', level:'상급', badge:'badge-red', folder:'상급', words:[
+    {en:'abolish',ko:'폐지하다',ex:'They voted to abolish the law.'},
+    {en:'abstract',ko:'추상적인, 개요',ex:'The painting is very abstract.'},
+    {en:'abundant',ko:'풍부한',ex:'The region has abundant natural resources.'},
+    {en:'accelerate',ko:'가속화하다',ex:'Technology accelerates social change.'},
+    {en:'acknowledge',ko:'인정하다',ex:'She acknowledged her mistake.'},
+    {en:'acquire',ko:'획득하다',ex:'He acquired new skills.'},
+    {en:'advocate',ko:'옹호하다, 지지자',ex:'She advocates for human rights.'},
+    {en:'alleviate',ko:'완화하다',ex:'Medicine can alleviate pain.'},
+    {en:'ambiguous',ko:'모호한',ex:'The instructions were ambiguous.'},
+    {en:'analyze',ko:'분석하다',ex:'Analyze the data carefully.'},
+    {en:'anticipate',ko:'예상하다',ex:'We anticipate a large crowd.'},
+    {en:'apparent',ko:'명백한, 겉보기의',ex:'The cause was apparent to everyone.'},
+    {en:'assert',ko:'주장하다',ex:'She asserted her rights.'},
+    {en:'assess',ko:'평가하다',ex:'Assess the risk before deciding.'},
+    {en:'assume',ko:'가정하다, 추정하다',ex:"Don't assume the worst."},
+    {en:'authentic',ko:'진정한, 진짜의',ex:'She has an authentic personality.'},
+    {en:'bias',ko:'편견, 치우침',ex:'Try to eliminate bias from your judgment.'},
+    {en:'coherent',ko:'일관된, 논리적인',ex:'Give a coherent explanation.'},
+    {en:'collaborate',ko:'협력하다',ex:'We must collaborate to succeed.'},
+    {en:'competent',ko:'유능한',ex:'She is a competent engineer.'},
+    {en:'comprehend',ko:'이해하다',ex:'I cannot comprehend his reasoning.'},
+    {en:'compromise',ko:'타협하다, 타협',ex:'Both sides agreed to compromise.'},
+    {en:'conclude',ko:'결론짓다',ex:'The study concludes that sleep is vital.'},
+    {en:'conform',ko:'따르다, 순응하다',ex:'Conform to the rules.'},
+    {en:'consequence',ko:'결과, 영향',ex:'Think about the consequences.'},
+    {en:'controversy',ko:'논란, 논쟁',ex:'The decision sparked controversy.'},
+    {en:'conviction',ko:'신념, 유죄 판결',ex:'She spoke with conviction.'},
+    {en:'correlate',ko:'상관관계가 있다',ex:'Stress correlates with health problems.'},
+    {en:'crucial',ko:'결정적인, 매우 중요한',ex:'This step is crucial to success.'},
+    {en:'cultivate',ko:'계발하다, 경작하다',ex:'Cultivate good habits.'},
+    {en:'deduce',ko:'추론하다',ex:'She deduced the answer from clues.'},
+    {en:'deliberate',ko:'의도적인, 신중히 생각하다',ex:'It was a deliberate choice.'},
+    {en:'demonstrate',ko:'증명하다, 시범을 보이다',ex:'Demonstrate your skills.'},
+    {en:'derive',ko:'파생되다, 얻다',ex:'The word derives from Latin.'},
+    {en:'distinguish',ko:'구별하다',ex:'Distinguish between facts and opinions.'},
+    {en:'dominant',ko:'지배적인',ex:'She has a dominant personality.'},
+    {en:'dynamic',ko:'역동적인',ex:'The city has a dynamic energy.'},
+    {en:'elaborate',ko:'정교한, 자세히 설명하다',ex:'Please elaborate on your idea.'},
+    {en:'eloquent',ko:'웅변적인, 유창한',ex:'She gave an eloquent speech.'},
+    {en:'emerge',ko:'나타나다, 부상하다',ex:'A new trend has emerged.'},
+    {en:'empirical',ko:'경험적인, 실증적인',ex:'We need empirical evidence.'},
+    {en:'enhance',ko:'향상시키다',ex:'Exercise enhances mental health.'},
+    {en:'ethical',ko:'윤리적인',ex:'Consider the ethical implications.'},
+    {en:'evident',ko:'명백한',ex:'It is evident that she is talented.'},
+    {en:'exacerbate',ko:'악화시키다',ex:'Stress can exacerbate health problems.'},
+    {en:'facilitate',ko:'촉진하다, 가능하게 하다',ex:'Technology facilitates communication.'},
+    {en:'fluctuate',ko:'변동하다',ex:'Prices fluctuate constantly.'},
+    {en:'fundamental',ko:'근본적인',ex:'Trust is fundamental in relationships.'},
+    {en:'hypothesize',ko:'가설을 세우다',ex:'Scientists hypothesize before testing.'},
+    {en:'illuminate',ko:'밝히다, 설명하다',ex:'The study illuminates the issue.'},
+  ]},
+  advanced2: { name:'상급 2', level:'상급', badge:'badge-red', folder:'상급', words:[
+    {en:'implicit',ko:'암묵적인',ex:'There is an implicit agreement.'},
+    {en:'implication',ko:'함의, 영향',ex:'Consider the implications of your actions.'},
+    {en:'infer',ko:'추론하다',ex:'Infer the meaning from context.'},
+    {en:'inherent',ko:'본질적인, 내재하는',ex:'There are inherent risks in every decision.'},
+    {en:'innovative',ko:'혁신적인',ex:'She has innovative ideas.'},
+    {en:'integrity',ko:'정직성, 완전성',ex:'Act with integrity.'},
+    {en:'intricate',ko:'복잡한, 정교한',ex:'The design is very intricate.'},
+    {en:'justify',ko:'정당화하다',ex:'Justify your decision with evidence.'},
+    {en:'leverage',ko:'활용하다, 영향력',ex:'Leverage your strengths.'},
+    {en:'meticulous',ko:'꼼꼼한, 세심한',ex:'She is meticulous about details.'},
+    {en:'mitigate',ko:'완화하다',ex:'Take steps to mitigate the risk.'},
+    {en:'nuance',ko:'뉘앙스, 미묘한 차이',ex:'Pay attention to the nuances.'},
+    {en:'objective',ko:'객관적인, 목표',ex:'Be objective in your assessment.'},
+    {en:'obscure',ko:'불분명한, 가리다',ex:'The meaning is obscure.'},
+    {en:'paradox',ko:'역설',ex:'It is a paradox that less is more.'},
+    {en:'perceive',ko:'인식하다',ex:'How do you perceive this situation?'},
+    {en:'persist',ko:'지속되다, 고집하다',ex:'Persist despite difficulties.'},
+    {en:'plausible',ko:'그럴듯한',ex:'That explanation is plausible.'},
+    {en:'precedent',ko:'선례',ex:'This sets a dangerous precedent.'},
+    {en:'profound',ko:'심오한, 깊은',ex:'The book had a profound impact on me.'},
+    {en:'prominent',ko:'두드러진, 저명한',ex:'She is a prominent scientist.'},
+    {en:'scrutinize',ko:'면밀히 조사하다',ex:'Scrutinize the contract before signing.'},
+    {en:'substantial',ko:'상당한, 실질적인',ex:'There is substantial evidence.'},
+    {en:'subtle',ko:'미묘한',ex:'There is a subtle difference.'},
+    {en:'sustain',ko:'지속하다, 유지하다',ex:'Sustain your efforts over time.'},
+    {en:'synthesize',ko:'종합하다, 합성하다',ex:'Synthesize information from multiple sources.'},
+    {en:'tendency',ko:'경향',ex:'She has a tendency to overthink.'},
+    {en:'ultimate',ko:'궁극적인',ex:'What is your ultimate goal?'},
+    {en:'undermine',ko:'약화시키다',ex:"Don't undermine others' confidence."},
+    {en:'unprecedented',ko:'전례 없는',ex:'This is an unprecedented situation.'},
+    {en:'validate',ko:'검증하다, 인정하다',ex:'Validate your hypothesis with data.'},
+    {en:'volatile',ko:'변동성이 큰, 불안정한',ex:'The market is volatile.'},
+    {en:'vulnerable',ko:'취약한',ex:'Children are vulnerable to illness.'},
+    {en:'adhere',ko:'고수하다, 따르다',ex:'Adhere to the rules.'},
+    {en:'adversity',ko:'역경',ex:'She thrived despite adversity.'},
+    {en:'aggregate',ko:'집합적인, 합계',ex:'The aggregate result was positive.'},
+    {en:'allude',ko:'암시하다',ex:'She alluded to the problem.'},
+    {en:'ambivalent',ko:'양면적인, 갈등하는',ex:'I feel ambivalent about the decision.'},
+    {en:'anomaly',ko:'이상, 예외',ex:'This result is an anomaly.'},
+    {en:'articulate',ko:'명확히 표현하다',ex:'Articulate your thoughts clearly.'},
+    {en:'aspire',ko:'열망하다',ex:'She aspires to be a scientist.'},
+    {en:'astute',ko:'기민한, 영리한',ex:'She made an astute observation.'},
+    {en:'benevolent',ko:'자애로운',ex:'She is a benevolent leader.'},
+    {en:'candid',ko:'솔직한',ex:'Be candid about your feelings.'},
+    {en:'circumvent',ko:'우회하다, 피하다',ex:"Try not to circumvent the rules."},
+    {en:'compelling',ko:'설득력 있는, 강력한',ex:'She made a compelling argument.'},
+    {en:'concede',ko:'인정하다, 양보하다',ex:'He conceded that he was wrong.'},
+    {en:'consolidate',ko:'통합하다, 강화하다',ex:'Consolidate your knowledge.'},
+    {en:'contemplate',ko:'숙고하다',ex:'Contemplate your next move.'},
+    {en:'credible',ko:'신뢰할 수 있는',ex:'She is a credible witness.'},
+  ]},
+  advanced3: { name:'상급 3', level:'상급', badge:'badge-red', folder:'상급', words:[
+    {en:'cynical',ko:'냉소적인',ex:"Don't be too cynical."},
+    {en:'decipher',ko:'해독하다',ex:'She deciphered the code.'},
+    {en:'defer',ko:'미루다, 따르다',ex:"Defer to the expert's opinion."},
+    {en:'deter',ko:'막다, 억제하다',ex:'Fear should not deter you.'},
+    {en:'dichotomy',ko:'이분법',ex:'There is a dichotomy between theory and practice.'},
+    {en:'diligent',ko:'부지런한',ex:'She is a diligent worker.'},
+    {en:'discrepancy',ko:'불일치, 차이',ex:'There is a discrepancy in the data.'},
+    {en:'dogmatic',ko:'독단적인',ex:"Don't be dogmatic in your thinking."},
+    {en:'elucidate',ko:'명확히 하다',ex:'Please elucidate your point.'},
+    {en:'empathy',ko:'공감',ex:'Show empathy toward others.'},
+    {en:'enigmatic',ko:'수수께끼 같은',ex:'She has an enigmatic smile.'},
+    {en:'ephemeral',ko:'덧없는, 일시적인',ex:'Fame can be ephemeral.'},
+    {en:'exemplify',ko:'예시하다',ex:'She exemplifies hard work.'},
+    {en:'exhaustive',ko:'철저한, 포괄적인',ex:'Conduct an exhaustive search.'},
+    {en:'exonerate',ko:'무죄를 입증하다',ex:'New evidence exonerated him.'},
+    {en:'expedite',ko:'신속히 처리하다',ex:'Expedite the process if possible.'},
+    {en:'fallacy',ko:'오류, 잘못된 생각',ex:'That argument is a fallacy.'},
+    {en:'formulate',ko:'공식화하다, 수립하다',ex:'Formulate a clear strategy.'},
+    {en:'illuminate',ko:'밝히다, 설명하다',ex:'The study illuminates the issue.'},
+    {en:'invoke',ko:'불러일으키다, 호소하다',ex:'The music invokes strong emotions.'},
+    {en:'manifestation',ko:'표현, 나타남',ex:'Anger is a manifestation of stress.'},
+    {en:'ameliorate',ko:'개선하다',ex:'The policy aims to ameliorate poverty.'},
+    {en:'affirmation',ko:'확인, 긍정',ex:'Positive affirmations boost confidence.'},
+    {en:'allegation',ko:'혐의, 주장',ex:'The allegations were proven false.'},
+    {en:'augment',ko:'늘리다, 보강하다',ex:'Augment your skills with practice.'},
+    {en:'capitalize',ko:'활용하다, 대문자로 쓰다',ex:'Capitalize on every opportunity.'},
+    {en:'circumvent',ko:'우회하다',ex:'Circumvent obstacles creatively.'},
+    {en:'cognizant',ko:'인식하는',ex:"Be cognizant of others' feelings."},
+    {en:'conjecture',ko:'추측, 추측하다',ex:'This is mere conjecture.'},
+    {en:'contend',ko:'주장하다, 겨루다',ex:'She contends that the policy is flawed.'},
+    {en:'contradictory',ko:'모순적인',ex:'His statements are contradictory.'},
+    {en:'controversial',ko:'논란이 되는',ex:'This is a controversial topic.'},
+    {en:'corroborate',ko:'뒷받침하다',ex:'The evidence corroborates the theory.'},
+    {en:'deceive',ko:'속이다',ex:"Don't deceive others."},
+    {en:'deficiency',ko:'결핍, 부족',ex:'Iron deficiency causes fatigue.'},
+    {en:'enumerate',ko:'열거하다',ex:'Enumerate the steps clearly.'},
+    {en:'explicitly',ko:'명시적으로',ex:'State your opinion explicitly.'},
+    {en:'exploit',ko:'이용하다, 착취하다',ex:"Don't exploit others' weaknesses."},
+    {en:'obsolete',ko:'쓸모없어진, 구식의',ex:'This technology is now obsolete.'},
+    {en:'ostensible',ko:'표면상의, 겉으로 보이는',ex:'The ostensible reason was cost.'},
+    {en:'pragmatic',ko:'실용적인',ex:'Take a pragmatic approach.'},
+    {en:'precarious',ko:'불안정한, 위험한',ex:'She was in a precarious situation.'},
+    {en:'premise',ko:'전제, 근거',ex:'The argument is based on a false premise.'},
+    {en:'proponent',ko:'지지자',ex:'She is a proponent of clean energy.'},
+    {en:'reconcile',ko:'화해하다, 조화시키다',ex:'They reconciled after the argument.'},
+    {en:'repercussion',ko:'영향, 반향',ex:'Consider the repercussions.'},
+    {en:'rhetoric',ko:'수사학, 미사여구',ex:'Avoid empty rhetoric.'},
+    {en:'stipulate',ko:'규정하다, 명시하다',ex:'The contract stipulates clear terms.'},
+    {en:'tangible',ko:'실질적인, 만질 수 있는',ex:'There are tangible benefits.'},
+    {en:'tenacious',ko:'끈질긴, 완고한',ex:'She is tenacious in her pursuit.'},
+    {en:'ubiquitous',ko:'어디에나 있는',ex:'Smartphones are ubiquitous today.'},
+  ]},
+};
+
+// ========================
+// STATE
+// ========================
+let state = {
+  currentScreen: 'home',
+  currentFolder: null,
+  studyUnit: null,
+  studyView: 'words',
+  quizMode: null,
+  quizUnit: null,
+  quizWords: [],
+  quizIndex: 0,
+  quizScore: 0,
+  quizWrong: [],
+  modalCallback: null,
+  modalType: null,
+};
+
+function getFolders() {
+  return JSON.parse(localStorage.getItem('wb_folders') || '[]');
+}
+function saveFolders(f) { localStorage.setItem('wb_folders', JSON.stringify(f)); }
+
+function getCustomWords() {
+  return JSON.parse(localStorage.getItem('wb_words') || '[]');
+}
+function saveCustomWords(w) { localStorage.setItem('wb_words', JSON.stringify(w)); }
+
+function getExcluded() {
+  return JSON.parse(localStorage.getItem('wb_excluded') || '[]');
+}
+function saveExcluded(e) { localStorage.setItem('wb_excluded', JSON.stringify(e)); }
+
+function getTrash() {
+  return JSON.parse(localStorage.getItem('wb_trash') || '[]');
+}
+function saveTrash(t) { localStorage.setItem('wb_trash', JSON.stringify(t)); }
+
+function allWordsForUnit(unitId) {
+  const rec = Object.values(RECOMMENDED_SETS).find(s => s.name === unitId || unitId === s.name);
+  const recWords = rec ? rec.words.map(w => ({...w, unit: unitId})) : [];
+  const custom = getCustomWords().filter(w => w.unit === unitId);
+  return [...recWords, ...custom];
+}
+
+function allActiveWords(unitId) {
+  const exc = getExcluded();
+  return allWordsForUnit(unitId).filter(w => !exc.includes(unitId + ':' + w.en));
+}
+
+// ========================
+// NAVIGATION
+// ========================
+function showScreen(name) {
+  const map = {
+    'home':'screen-home','quiz-select':'screen-quiz-select',
+    'quiz-game':'screen-quiz-game','quiz-result':'screen-quiz-result',
+    'study':'screen-study','study-words':'screen-study-words','trash':'screen-trash',
+  };
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(map[name]).classList.add('active');
+  state.currentScreen = name;
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  if (name==='home') document.getElementById('nav-home').classList.add('active');
+  if (name.startsWith('quiz')) document.getElementById('nav-quiz').classList.add('active');
+  if (name.startsWith('study')) { document.getElementById('nav-study').classList.add('active'); if(name==='study') renderFolderView(); }
+  if (name==='trash') { document.getElementById('nav-trash').classList.add('active'); renderTrash(); }
+  if (name==='quiz-select') renderQuizUnits();
+}
+function goHome() { showScreen('home'); }
+
+// ========================
+// FOLDER VIEW
+// ========================
+function renderFolderView() {
+  const folders = getFolders();
+  const currentId = state.currentFolder;
+  const items = folders.filter(f => f.parentId === currentId);
+
+  if (currentId === null) {
+    document.getElementById('study-title').textContent = '학습';
+    document.getElementById('study-back-btn').textContent = '← 홈';
+    document.getElementById('study-back-btn').onclick = () => goHome();
+  } else {
+    const cur = folders.find(f => f.id === currentId);
+    document.getElementById('study-title').textContent = cur?.name || '학습';
+    document.getElementById('study-back-btn').textContent = '← 뒤로';
+    document.getElementById('study-back-btn').onclick = () => studyGoBack();
+  }
+
+  let html = '<div class="cards-grid">';
+  items.forEach(item => {
+    const count = item.type === 'folder'
+      ? folders.filter(f => f.parentId === item.id).length
+      : allWordsForUnit(item.name).length;
+    const icon = item.type === 'folder' ? '📁' : '📄';
+    const sub = item.type === 'folder' ? `${count}개 항목` : `${count}개 단어`;
+    html += `<div class="card-item" onclick="${item.type==='folder' ? `openFolder('${item.id}')` : `openWordList('${item.id}','${item.name.replace(/'/g,"\\'")}')`}">
+      <div style="font-size:28px">${icon}</div>
+      <h3>${item.name}</h3><p>${sub}</p>
+      <button class="card-delete-btn" onclick="event.stopPropagation();moveToTrash('${item.id}')">🗑️</button>
+    </div>`;
+  });
+  html += `<div class="add-card" onclick="addFolder()">📁<br><span style="font-size:12px">폴더 추가</span></div>
+    <div class="add-card" onclick="addFile()">📄<br><span style="font-size:12px">파일 추가</span></div></div>`;
+  document.getElementById('study-folder-view').innerHTML = html;
+}
+
+function openFolder(id) { state.currentFolder = id; renderFolderView(); }
+
+function studyGoBack() {
+  const folders = getFolders();
+  const cur = folders.find(f => f.id === state.currentFolder);
+  state.currentFolder = cur?.parentId || null;
+  showScreen('study');
+}
+function studyBackToFolder() { showScreen('study'); }
+
+function openWordList(id, name) {
+  state.studyUnit = name;
+  state.studyView = 'words';
+  document.getElementById('study-words-title').textContent = name;
+  document.getElementById('view-words-btn').classList.add('active');
+  document.getElementById('view-examples-btn').classList.remove('active');
+  document.getElementById('search-input').value = '';
+  document.getElementById('add-word-form').classList.remove('open');
+  showScreen('study-words');
+  renderStudy();
+}
+
+function addFolder() {
+  openModal('folder', '폴더 이름', null, (name) => {
+    const folders = getFolders();
+    folders.push({ id: 'f_'+Date.now(), name, type:'folder', parentId: state.currentFolder });
+    saveFolders(folders);
+    renderFolderView();
+  });
+}
+
+function addFile() {
+  openModal('file', '파일(단어장) 이름', null, (name, recKey) => {
+    if (!name) return;
+    const folders = getFolders();
+    const id = 'p_'+Date.now();
+    folders.push({ id, name, type:'file', parentId: state.currentFolder });
+    saveFolders(folders);
+    // 추천 세트 단어 복사
+    if (recKey && RECOMMENDED_SETS[recKey]) {
+      const words = getCustomWords();
+      RECOMMENDED_SETS[recKey].words.forEach(w => {
+        words.push({...w, unit: name});
+      });
+      saveCustomWords(words);
+    }
+    renderFolderView();
+  });
+}
+
+// ========================
+// TRASH
+// ========================
+function moveToTrash(id) {
+  if (!confirm('휴지통으로 이동할까요?')) return;
+  const folders = getFolders();
+  const item = folders.find(f => f.id === id);
+  if (!item) return;
+  const toTrash = [item];
+  const getChildren = pid => folders.filter(f => f.parentId===pid).forEach(c => { toTrash.push(c); if(c.type==='folder') getChildren(c.id); });
+  if (item.type==='folder') getChildren(id);
+  const trash = getTrash();
+  toTrash.forEach(t => trash.push({...t, deletedAt: new Date().toLocaleDateString('ko-KR')}));
+  saveTrash(trash);
+  saveFolders(folders.filter(f => !toTrash.map(t=>t.id).includes(f.id)));
+  renderFolderView();
+}
+
+function renderTrash() {
+  const trash = getTrash();
+  const c = document.getElementById('trash-content');
+  if (!trash.length) { c.innerHTML='<p style="color:#888;text-align:center;padding:60px">🗑️ 휴지통이 비어있어요!</p>'; return; }
+  c.innerHTML = trash.map((item,i) => `
+    <div class="trash-item">
+      <div class="trash-item-info">
+        <span style="font-size:24px">${item.type==='folder'?'📁':'📄'}</span>
+        <div><div class="trash-item-name">${item.name}</div><div class="trash-item-meta">삭제일: ${item.deletedAt}</div></div>
+      </div>
+      <div class="trash-actions">
+        <button class="restore-btn" onclick="restoreFromTrash(${i})">↩ 복원</button>
+        <button class="perm-delete-btn" onclick="permanentDelete(${i})">완전 삭제</button>
+      </div>
+    </div>`).join('');
+}
+
+function restoreFromTrash(i) {
+  const trash = getTrash(); const folders = getFolders();
+  const item = trash[i];
+  if (!folders.find(f => f.id === item.parentId)) item.parentId = null;
+  folders.push(item); saveFolders(folders);
+  trash.splice(i,1); saveTrash(trash); renderTrash();
+}
+function permanentDelete(i) {
+  if (!confirm('완전히 삭제할까요?')) return;
+  const trash = getTrash(); trash.splice(i,1); saveTrash(trash); renderTrash();
+}
+function emptyTrash() {
+  if (!confirm('휴지통을 비울까요?')) return;
+  saveTrash([]); renderTrash();
+}
+
+// ========================
+// STUDY - WORD VIEW
+// ========================
+function setView(v) {
+  state.studyView = v;
+  document.getElementById('view-words-btn').classList.toggle('active', v==='words');
+  document.getElementById('view-examples-btn').classList.toggle('active', v==='examples');
+  renderStudy();
+}
+function toggleAddForm() { document.getElementById('add-word-form').classList.toggle('open'); }
+
+function addCustomWord() {
+  const en = document.getElementById('new-word-en').value.trim();
+  const ko = document.getElementById('new-word-ko').value.trim();
+  const ex = document.getElementById('new-word-ex').value.trim();
+  if (!en||!ko) { alert('영단어와 뜻을 입력해주세요!'); return; }
+  const words = getCustomWords();
+  words.push({en, ko, unit: state.studyUnit, ex: ex||''});
+  saveCustomWords(words);
+  document.getElementById('new-word-en').value='';
+  document.getElementById('new-word-ko').value='';
+  document.getElementById('new-word-ex').value='';
+  document.getElementById('add-word-form').classList.remove('open');
+  renderStudy();
+}
+
+function renderStudy() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const sort = document.getElementById('sort-select').value;
+  const exc = getExcluded();
+  let words = allWordsForUnit(state.studyUnit);
+  if (search) words = words.filter(w => w.en.toLowerCase().includes(search) || w.ko.includes(search));
+  if (sort==='abc') words = [...words].sort((a,b) => a.en.localeCompare(b.en));
+  else if (sort==='ko') words = [...words].sort((a,b) => a.ko.localeCompare(b.ko));
+
+  const key = w => state.studyUnit+':'+w.en;
+  const addBtn = `<button onclick="toggleAddForm()" style="background:#4f6ef7;color:white;border:none;padding:8px 16px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;margin-bottom:12px">+ 단어 추가</button>`;
+
+  if (state.studyView==='words') {
+    document.getElementById('study-content').innerHTML = addBtn + `
+      <table class="word-table"><thead><tr><th>영단어</th><th>뜻</th><th>제외</th></tr></thead><tbody>
+      ${words.map(w => `<tr class="${exc.includes(key(w))?'excluded':''}">
+        <td><strong>${w.en}</strong></td><td>${w.ko}</td>
+        <td><button class="exclude-btn ${exc.includes(key(w))?'excluded':''}" onclick="toggleExclude('${state.studyUnit}','${w.en.replace(/'/g,"\\'")}')">
+          ${exc.includes(key(w))?'복원':'제외'}</button></td>
+      </tr>`).join('')}
+      </tbody></table>`;
+  } else {
+    document.getElementById('study-content').innerHTML = addBtn + (words.map(w => `
+      <div class="example-card ${exc.includes(key(w))?'excluded':''}">
+        <div class="word">${w.en}</div><div class="meaning">${w.ko}</div>
+        ${w.ex?`<div class="example">"${w.ex}"</div>`:''}
+      </div>`).join('') || '<p style="color:#888;text-align:center;padding:40px">단어가 없어요!</p>');
+  }
+}
+
+function toggleExclude(unit, en) {
+  const exc = getExcluded(); const key = unit+':'+en;
+  if (exc.includes(key)) saveExcluded(exc.filter(e=>e!==key));
+  else { exc.push(key); saveExcluded(exc); }
+  renderStudy();
+}
+
+function resetExclusions() {
+  if (!confirm('제외된 단어를 복원할까요?')) return;
+  const exc = getExcluded();
+  saveExcluded(exc.filter(e => !e.startsWith(state.studyUnit+':')));
+  renderStudy();
+}
+
+// ========================
+// QUIZ
+// ========================
+function renderQuizUnits() {
+  const folders = getFolders();
+  const files = folders.filter(f => f.type==='file');
+  const c = document.getElementById('quiz-unit-options');
+  if (!files.length) { c.innerHTML='<p style="color:#888">학습에서 단어장을 먼저 만들어줘!</p>'; return; }
+  c.innerHTML = files.map(f => `
+    <button class="option-btn" id="unit-${f.id}" onclick="selectUnit('${f.id}','${f.name.replace(/'/g,"\\'")}')">
+      📄 ${f.name} <span style="font-size:11px;opacity:0.6">(${allActiveWords(f.name).length}개)</span>
+    </button>`).join('');
+}
+
+function selectMode(mode) {
+  state.quizMode = mode;
+  document.querySelectorAll('[id^="mode-"]').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('mode-'+mode).classList.add('selected');
+  updateStartBtn();
+}
+function selectUnit(id, name) {
+  state.quizUnit = name;
+  document.querySelectorAll('[id^="unit-"]').forEach(b=>b.classList.remove('selected'));
+  document.getElementById('unit-'+id).classList.add('selected');
+  updateStartBtn();
+}
+function updateStartBtn() {
+  document.getElementById('start-quiz-btn').disabled = !(state.quizMode && state.quizUnit);
+}
+
+function shuffle(arr) {
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function startQuiz(words=null) {
+  const pool = words || allActiveWords(state.quizUnit);
+  if (pool.length<4) { alert('단어가 너무 적어요! (최소 4개)'); return; }
+  state.quizWords = shuffle(pool);
+  state.quizIndex = 0; state.quizScore = 0; state.quizWrong = [];
+  showScreen('quiz-game');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const w = state.quizWords[state.quizIndex];
+  const total = state.quizWords.length;
+  document.getElementById('quiz-counter').textContent = `${state.quizIndex+1} / ${total}`;
+  document.getElementById('quiz-score-display').textContent = `점수: ${state.quizScore}`;
+  document.getElementById('quiz-progress').style.width = (state.quizIndex/total*100)+'%';
+
+  const isMC = state.quizMode==='mc';
+  document.getElementById('input-area').style.display = isMC?'none':'block';
+  document.getElementById('mc-area').style.display = isMC?'block':'none';
+
+  if (state.quizMode==='en-ko') {
+    document.getElementById('prompt-label').textContent='영어 → 한국어';
+    document.getElementById('quiz-prompt').textContent=w.en;
+  } else if (state.quizMode==='ko-en') {
+    document.getElementById('prompt-label').textContent='한국어 → 영어';
+    document.getElementById('quiz-prompt').textContent=w.ko;
+  } else {
+    const isEnKo = Math.random()>0.5;
+    w._mcEnKo = isEnKo;
+    document.getElementById('prompt-label').textContent=isEnKo?'영어 → 한국어':'한국어 → 영어';
+    document.getElementById('quiz-prompt').textContent=isEnKo?w.en:w.ko;
+  }
+
+  if (!isMC) {
+    const inp = document.getElementById('quiz-input');
+    inp.value=''; inp.className='quiz-input'; inp.disabled=false; inp.focus();
+    document.getElementById('submit-btn').style.display='inline-block';
+    document.getElementById('next-btn').style.display='none';
+    document.getElementById('feedback').style.display='none';
+  } else renderMC(w);
+}
+
+function checkAnswer() {
+  const w = state.quizWords[state.quizIndex];
+  const inp = document.getElementById('quiz-input');
+  const ans = inp.value.trim().toLowerCase();
+  const correctRaw = state.quizMode==='en-ko' ? w.ko : w.en;
+  // 관용적 정답 처리: 콤마/슬래시로 구분, 앞뒤 공백 제거, 소문자 비교
+  const correctAlts = correctRaw.toLowerCase().split(/[,\/]/).map(s=>s.trim()).filter(Boolean);
+  const isCorrect = correctAlts.some(alt => ans===alt || ans===alt.replace(/\(.*?\)/g,'').trim());
+
+  inp.disabled=true;
+  document.getElementById('submit-btn').style.display='none';
+  document.getElementById('next-btn').style.display='inline-block';
+  const fb = document.getElementById('feedback');
+  fb.style.display='block';
+  if (isCorrect) {
+    inp.classList.add('correct');
+    fb.className='feedback correct'; fb.textContent='✅ 정답!';
+    state.quizScore++;
+  } else {
+    inp.classList.add('wrong');
+    fb.className='feedback wrong';
+    fb.textContent=`❌ 오답! 정답: ${correctRaw}`;
+    state.quizWrong.push(w);
+  }
+}
+
+function renderMC(w) {
+  const allW = allActiveWords(state.quizUnit);
+  const isEnKo = w._mcEnKo !== undefined ? w._mcEnKo : Math.random()>0.5;
+  w._mcEnKo = isEnKo;
+  const pool = shuffle(allW.filter(x=>x.en!==w.en)).slice(0,3);
+  const options = shuffle([w,...pool]);
+  const c = document.getElementById('mc-options');
+  c.innerHTML='';
+  options.forEach(opt => {
+    const btn=document.createElement('button');
+    btn.className='mc-btn';
+    btn.textContent=isEnKo?opt.ko:opt.en;
+    btn.onclick=()=>checkMC(btn,opt,w,isEnKo);
+    c.appendChild(btn);
+  });
+  document.getElementById('mc-next-btn').style.display='none';
+}
+
+function checkMC(btn,selected,correct,isEnKo) {
+  document.querySelectorAll('.mc-btn').forEach(b=>b.disabled=true);
+  const isCorrect=selected.en===correct.en;
+  if (isCorrect) { btn.classList.add('correct'); state.quizScore++; }
+  else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.mc-btn').forEach(b=>{
+      if(b.textContent===(isEnKo?correct.ko:correct.en)) b.classList.add('correct');
+    });
+    state.quizWrong.push(correct);
+  }
+  document.getElementById('mc-next-btn').style.display='inline-block';
+}
+
+function nextQuestion() {
+  state.quizIndex++;
+  if (state.quizIndex>=state.quizWords.length) showResult();
+  else renderQuestion();
+}
+
+function showResult() {
+  showScreen('quiz-result');
+  const total=state.quizWords.length, score=state.quizScore;
+  document.getElementById('result-score').textContent=`${score}/${total}`;
+  const pct=score/total;
+  document.getElementById('result-label').textContent = pct>=0.9?'완벽해! 🎉':pct>=0.7?'잘했어! 👍':pct>=0.5?'조금 더 열심히! 💪':'다시 한번 해봐! 📚';
+  document.getElementById('retry-wrong-btn').disabled=state.quizWrong.length===0;
+}
+function restartQuiz() { showScreen('quiz-select'); }
+function retryWrong() { if(state.quizWrong.length) startQuiz(state.quizWrong); }
+
+// ========================
+// MODAL
+// ========================
+function openModal(type, title, hint, callback) {
+  state.modalCallback = callback;
+  state.modalType = type;
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-input').value = '';
+  document.getElementById('modal-input').placeholder = hint || '이름 입력...';
+
+  const recDiv = document.getElementById('modal-rec-sets');
+
+  if (type === 'folder') {
+    recDiv.style.display = 'block';
+    const REC_FOLDERS = [
+      { key:'beginner', name:'초급', badge:'badge-green', desc:'초급 1·2·3 (총 150개 단어)', files:['beginner1','beginner2','beginner3'] },
+      { key:'intermediate', name:'중급', badge:'badge-yellow', desc:'중급 1·2·3 (총 150개 단어)', files:['intermediate1','intermediate2','intermediate3'] },
+      { key:'advanced', name:'상급', badge:'badge-red', desc:'상급 1·2·3 (총 150개 단어)', files:['advanced1','advanced2','advanced3'] },
+    ];
+    recDiv.innerHTML = '<p style="font-size:13px;color:#888;margin-bottom:8px">추천 세트로 시작:</p>' +
+      REC_FOLDERS.map(rf => `
+        <div class="rec-set" style="padding:12px;margin-bottom:8px">
+          <div class="rec-set-info">
+            <h4 style="font-size:14px">${rf.name} <span class="badge ${rf.badge}">${rf.name}</span></h4>
+            <p>${rf.desc}</p>
+          </div>
+          <button class="rec-use-btn" style="font-size:12px;padding:6px 12px" onclick="useRecommendedFolder('${rf.key}')">사용</button>
+        </div>`).join('');
+  } else if (type === 'file') {
+    recDiv.style.display = 'block';
+    recDiv.innerHTML = '<p style="font-size:13px;color:#888;margin-bottom:8px">추천 세트로 시작:</p>' +
+      Object.entries(RECOMMENDED_SETS).map(([key, s]) => `
+        <div class="rec-set" style="padding:12px;margin-bottom:8px">
+          <div class="rec-set-info">
+            <h4 style="font-size:14px">${s.name} <span class="badge ${s.badge}">${s.level}</span></h4>
+            <p>${s.words.length}개 단어</p>
+          </div>
+          <button class="rec-use-btn" style="font-size:12px;padding:6px 12px" onclick="useRecommended('${key}')">사용</button>
+        </div>`).join('');
+  } else {
+    recDiv.style.display = 'none';
+  }
+
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('modal-input').focus(),100);
+}
+
+function useRecommendedFolder(key) {
+  const MAP = {
+    beginner: { name:'초급', files:['beginner1','beginner2','beginner3'] },
+    intermediate: { name:'중급', files:['intermediate1','intermediate2','intermediate3'] },
+    advanced: { name:'상급', files:['advanced1','advanced2','advanced3'] },
+  };
+  const rf = MAP[key];
+  closeModal();
+  const folders = getFolders();
+  const folderId = 'f_'+Date.now();
+  folders.push({ id: folderId, name: rf.name, type:'folder', parentId: state.currentFolder });
+  const words = getCustomWords();
+  rf.files.forEach((fk, i) => {
+    const s = RECOMMENDED_SETS[fk];
+    if (!s) return;
+    const fileId = 'p_'+(Date.now()+i);
+    folders.push({ id: fileId, name: s.name, type:'file', parentId: folderId });
+    s.words.forEach(w => words.push({...w, unit: s.name}));
+  });
+  saveFolders(folders);
+  saveCustomWords(words);
+  renderFolderView();
+}
+
+function useRecommended(key) {
+  const s = RECOMMENDED_SETS[key];
+  document.getElementById('modal-input').value = s.name;
+  closeModal();
+  // 바로 파일 생성
+  const folders = getFolders();
+  const id = 'p_'+Date.now();
+  const name = s.name;
+  folders.push({ id, name, type:'file', parentId: state.currentFolder });
+  saveFolders(folders);
+  const words = getCustomWords();
+  s.words.forEach(w => words.push({...w, unit: name}));
+  saveCustomWords(words);
+  renderFolderView();
+}
+
+function closeModal() { document.getElementById('modal').classList.remove('open'); state.modalCallback=null; }
+
+function confirmModal() {
+  const val = document.getElementById('modal-input').value.trim();
+  if (!val) return;
+  if (state.modalCallback) state.modalCallback(val, null);
+  closeModal();
+}
+
+document.getElementById('modal-input').addEventListener('keydown', e => {
+  if (e.key==='Enter') confirmModal();
+  if (e.key==='Escape') closeModal();
+});
+
+showScreen('home');
+</script>
+</body>
+</html>
